@@ -4,18 +4,24 @@ A simple task manager API built with **.NET 8 (ASP.NET Core)** and **EF Core (SQ
 
 ## Run locally
 1. Open in Visual Studio 2022  
-2. Press F5 → Swagger opens at https://localhost:xxxx/swagger
+2. Press F5 → Swagger opens at https://localhost:xxxx/swagger  
+
+The API uses a local SQLite file (`taskflow.db`) with a connection string defined in `appsettings.json` under **ConnectionStrings:TaskFlowDb**.
 
 ## Endpoints
-- `GET /api/tasks` – list tasks (persisted in SQLite, sorted newest first in memory)  
-- `POST /api/tasks` – create task `{ "title": "…" }`
+- `GET /api/tasks` – list all tasks (persisted in SQLite, sorted newest first in memory)  
+- `GET /api/tasks/{id}` – get one task by ID  
+- `POST /api/tasks` – create task `{ "title": "…" }`  
+- `PUT /api/tasks/{id}` – replace an existing task (full update)  
+- `PATCH /api/tasks/{id}` – partial update (title, priority, status, due date, mark complete)  
+- `DELETE /api/tasks/{id}` – remove a task  
 
 ## Roadmap
 - [x] In-memory tasks API  
 - [x] EF Core + SQLite (persist tasks)  
-- [ ] Update (PUT/PATCH) & Delete endpoints  
+- [x] Update (PUT/PATCH) & Delete endpoints  
 - [ ] Auth (Identity)  
-- [ ] React frontend (Vite + TS)
+- [ ] React frontend (Vite + TS)  
 
 ## Notes / Issues
 - **SQLite + DateTimeOffset:**  

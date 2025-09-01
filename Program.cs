@@ -4,7 +4,7 @@ using TaskFlow.Api.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // EF Core + SQLite
-var cs = builder.Configuration.GetConnectionString("db") ?? "Data Source=taskflow.db";
+var cs = builder.Configuration.GetConnectionString("dbContext") ?? "Data Source=taskflow.db";
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(cs));
 
 
