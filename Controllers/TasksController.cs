@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TaskFlow.Api.Data;
 
 namespace TaskFlow.Api.Controllers
 {
@@ -7,27 +9,31 @@ namespace TaskFlow.Api.Controllers
     [ApiController]
     public class TasksController : ControllerBase
     {
-
-        //Temporary static list to hold tasks in memory
-        private static readonly List<TaskItem> _tasks = new()
-        {
-            new TaskItem { Title = "Hello TaskFlow", Priority = Priority.Medium, Status = Status.Backlog },
-            new TaskItem { Title = "Second task", Priority = Priority.Low, Status = Status.InProgress }
-        };
-
+        private readonly AppDbContext _db;
+        public TasksController(AppDbContext db) => _db = db;
 
         [HttpGet]
-        public ActionResult<IEnumerable<TaskItem>> Get()
-            => Ok(_tasks.OrderByDescending(t => t.CreatedAt));
+        public async Task<ActionResult<IEnumerable<TaskItem>>> Get(CancellationToken ct)
+        {
+            var items = await _db.Tasks
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            return Ok(items.OrderByDescending(t => t.CreatedAt));
+        }
 
         public record CreateTaskDto(string Title);
 
         [HttpPost]
-        public ActionResult<TaskItem> Create([FromBody] CreateTaskDto dto)
+        public async Task<ActionResult<TaskItem>> Create([FromBody] CreateTaskDto dto, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Title is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return BadRequest("Title is required.");
+
             var item = new TaskItem { Title = dto.Title.Trim() };
-            _tasks.Add(item);
+            _db.Tasks.Add(item);
+            await _db.SaveChangesAsync(ct);
+
             return CreatedAtAction(nameof(Get), new { id = item.Id }, item);
         }
     }

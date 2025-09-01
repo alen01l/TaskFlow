@@ -1,9 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using TaskFlow.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// EF Core + SQLite
+var cs = builder.Configuration.GetConnectionString("db") ?? "Data Source=taskflow.db";
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(cs));
 
+
+// MVC + Swagger
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -12,7 +18,6 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
