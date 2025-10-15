@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Api.Data;
@@ -25,8 +26,35 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
         o.Cookie.Name = "taskflow.auth";
         o.SlidingExpiration = true;
         o.Cookie.HttpOnly = true;
-        o.Cookie.SameSite = SameSiteMode.Lax;
+        o.Cookie.SameSite = SameSiteMode.None;
+        o.Events = new CookieAuthenticationEvents
+        {
+            OnRedirectToLogin = ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments("/api"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return Task.CompletedTask;
+                }
+
+                ctx.Response.Redirect(ctx.RedirectUri);
+                return Task.CompletedTask;
+            },
+            OnRedirectToAccessDenied = ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments("/api"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    return Task.CompletedTask;
+                }
+
+                ctx.Response.Redirect(ctx.RedirectUri);
+                return Task.CompletedTask;
+            }
+        };
     });
+
+
 
 builder.Services.AddAuthorization();
 
@@ -38,6 +66,15 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "TaskFlow API", Version = "v1" });
 });
 
+
+const string Frontend = "Frontend";
+builder.Services.AddCors(o =>
+    o.AddPolicy(Frontend, p => p
+        .WithOrigins("http://localhost:5173")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -46,8 +83,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 
+
+app.UseHttpsRedirection();
+app.UseCors(Frontend);
 app.UseAuthentication();
 app.UseAuthorization();
 
