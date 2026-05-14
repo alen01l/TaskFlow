@@ -53,11 +53,25 @@ namespace TaskFlow.Api.Controllers
         }
 
         [HttpGet("me")]
-        public async Task<IActionResult> Me()
+        public async Task<ActionResult<object?>> Me()
         {
-            if (!(User.Identity?.IsAuthenticated ?? false)) return Ok(null);
+            if (User?.Identity?.IsAuthenticated != true)
+            {
+                return Ok(null);
+            }
+
             var user = await _users.GetUserAsync(User);
-            return Ok(new { id = user!.Id, email = user.Email });
+
+            if (user is null)
+            {
+                return Ok(null);
+            }
+
+            return Ok(new
+            {
+                user.Id,
+                user.Email
+            });
         }
     }
 }
