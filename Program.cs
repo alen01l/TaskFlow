@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using TaskFlow.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,17 +10,18 @@ var builder = WebApplication.CreateBuilder(args);
 var cs = builder.Configuration.GetConnectionString("dbContext") ?? "Data Source=taskflow.db";
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(cs));
 
-// Identity (cookie auth)
+// Identity
 builder.Services.AddIdentityCore<AppUser>(o =>
-    {
-        o.Password.RequiredLength = 6;
-        o.Password.RequireDigit = true;
-        o.Password.RequireNonAlphanumeric = false;
-        o.Password.RequireUppercase = false;
-    })
+{
+    o.Password.RequiredLength = 6;
+    o.Password.RequireDigit = true;
+    o.Password.RequireNonAlphanumeric = false;
+    o.Password.RequireUppercase = false;
+})
     .AddEntityFrameworkStores<AppDbContext>()
     .AddSignInManager();
 
+// Cookie auth
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddCookie(IdentityConstants.ApplicationScheme, o =>
     {
@@ -27,6 +29,8 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
         o.SlidingExpiration = true;
         o.Cookie.HttpOnly = true;
         o.Cookie.SameSite = SameSiteMode.None;
+        o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
         o.Events = new CookieAuthenticationEvents
         {
             OnRedirectToLogin = ctx =>
@@ -54,19 +58,22 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
         };
     });
 
-
-
 builder.Services.AddAuthorization();
 
-// MVC + Swagger
-builder.Services.AddControllers();
+// Controllers + JSON enum strings
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "TaskFlow API", Version = "v1" });
 });
 
-
+// CORS
 const string Frontend = "Frontend";
 builder.Services.AddCors(o =>
     o.AddPolicy(Frontend, p => p
@@ -83,23 +90,35 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
-
 app.UseHttpsRedirection();
+
 app.UseCors(Frontend);
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
+// Apply migrations + seed demo user
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+
     var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+
     var email = "demo@taskflow.local";
     var user = await userMgr.FindByEmailAsync(email);
+
     if (user is null)
     {
-        user = new AppUser { UserName = email, Email = email, EmailConfirmed = true };
+        user = new AppUser
+        {
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true
+        };
+
         await userMgr.CreateAsync(user, "Pass123$");
     }
 }

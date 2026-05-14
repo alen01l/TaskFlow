@@ -11,8 +11,8 @@ using TaskFlow.Api.Data;
 namespace TaskFlow.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250901150214_AddIdentityAndUserId")]
-    partial class AddIdentityAndUserId
+    [Migration("20260514114216_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
