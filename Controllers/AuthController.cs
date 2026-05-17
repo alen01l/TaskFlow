@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using TaskFlow.Api.Contracts.Auth;
 using TaskFlow.Api.Data;
 
 namespace TaskFlow.Api.Controllers
@@ -16,9 +17,6 @@ namespace TaskFlow.Api.Controllers
         {
             _users = users; _signIn = signIn;
         }
-
-        public record RegisterDto(string Email, string Password);
-        public record LoginDto(string Email, string Password);
 
         [HttpPost("register")]
         [AllowAnonymous]
