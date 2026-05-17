@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TaskFlow.Api.Contracts.Tasks;
 using TaskFlow.Api.Data;
 
 namespace TaskFlow.Api.Controllers
@@ -50,24 +51,6 @@ namespace TaskFlow.Api.Controllers
 
             return Ok(item);
         }
-
-
-        public record CreateTaskDto(string Title);
-
-        public record ReplaceTaskDto(
-            string Title,
-            Priority Priority,
-            Status Status,
-            DateTimeOffset? DueAtUtc,
-            DateTimeOffset? CompletedAt
-        );
-        public record UpdateTaskDto(
-            string? Title,
-            Priority? Priority,
-            Status? Status,
-            DateTimeOffset? DueAtUtc,
-            bool? MarkComplete
-        );
 
 
 
