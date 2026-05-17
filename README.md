@@ -1,52 +1,252 @@
-# TaskFlow
+TaskFlow API
+============
 
-A simple task manager API built with **.NET 8 (ASP.NET Core)** and **EF Core (SQLite)**.
+A task manager API built with **.NET 8**, **ASP.NET Core Web API**, **ASP.NET Core Identity**, **EF Core**, and **SQLite**.
 
-## Run locally
-1. Open in Visual Studio 2022  
-2. Press F5 → Swagger opens at https://localhost:xxxx/swagger  
+Features
+--------
 
-The API uses a local SQLite file (`taskflow.db`) with a connection string defined in `appsettings.json` under **ConnectionStrings:TaskFlowDb**.
+*   Cookie-based authentication with ASP.NET Core Identity
+*   Demo user seeded automatically
+*   Per-user task ownership
+*   SQLite persistence
+*   EF Core migrations
+*   FluentValidation for request validation
+*   Swagger in development
+*   CORS configured for the Vite frontend
 
-## Demo User
-A demo account is seeded automatically for testing:
+Run locally
+-----------
 
-- Email: `demo@taskflow.local`  
-- Password: `Pass123$`  
+### Requirements
 
-Use this to log in via `POST /api/auth/login` before calling task endpoints.
+*   .NET 8 SDK
+*   Visual Studio 2022 or terminal
+*   SQLite database is created locally as `taskflow.db`
 
-## Endpoints
+### Start the API
+
+From the API project folder:
+
+    dotnet restore
+    dotnet build
+    dotnet run
+
+Or open the project in Visual Studio 2022 and press `F5`.
+
+Swagger is available in development at:
+
+    https://localhost:<port>/swagger
+
+Database
+--------
+
+The API uses a local SQLite database file:
+
+    taskflow.db
+
+The connection string is defined in `appsettings.json` under:
+
+    {
+      "ConnectionStrings": {
+        "dbContext": "Data Source=taskflow.db"
+      }
+    }
+
+Migrations are applied automatically on startup.
+
+To create a fresh local database, delete `taskflow.db` and run the API again.
+
+Demo user
+---------
+
+A demo account is seeded automatically:
+
+    Email: demo@taskflow.local
+    Password: Pass123$
+
+Use this account to log in before calling authenticated task endpoints.
+
+Authentication
+--------------
+
+Authentication uses cookies.
+
+Login:
+
+    POST /api/auth/login
+
+Body:
+
+    {
+      "email": "demo@taskflow.local",
+      "password": "Pass123$"
+    }
+
+After login, the API sets a `taskflow.auth` cookie.
+
+Endpoints
+---------
 
 ### Auth
-- `POST /api/auth/register` – create a new user  
-- `POST /api/auth/login` – log in (sets auth cookie)  
-- `POST /api/auth/logout` – log out  
-- `GET /api/auth/me` – get current logged-in user  
 
-### Tasks (require authentication)
-- `GET /api/tasks` – list all tasks (persisted in SQLite, sorted newest first in memory)  
-- `GET /api/tasks/{id}` – get one task by ID  
-- `POST /api/tasks` – create task `{ "title": "…" }`  
-- `PUT /api/tasks/{id}` – replace an existing task (full update)  
-- `PATCH /api/tasks/{id}` – partial update (title, priority, status, due date, mark complete)  
-- `DELETE /api/tasks/{id}` – remove a task  
+Method
 
-## Roadmap
-- [x] In-memory tasks API  
-- [x] EF Core + SQLite (persist tasks)  
-- [x] Update (PUT/PATCH) & Delete endpoints  
-- [x] Auth (Identity, per-user tasks, seeded demo user)  
-- [ ] React frontend (Vite + TS)  
+Endpoint
 
-## Notes / Issues
-- **SQLite + DateTimeOffset:**  
-  SQLite doesn’t support ordering by `DateTimeOffset` directly, which caused a runtime error.  
+Description
 
-  **Fix:** load tasks into memory and sort with LINQ in C#:  
-  ```
-  var items = await _db.Tasks.AsNoTracking().ToListAsync(ct);
-  return Ok(items.OrderByDescending(t => t.CreatedAt));
-  ```
+`POST`
 
--**Future improvement:** use SQL Server or store dates as Unix milliseconds to support server-side ordering.
+`/api/auth/register`
+
+Create a new user
+
+`POST`
+
+`/api/auth/login`
+
+Log in and set auth cookie
+
+`POST`
+
+`/api/auth/logout`
+
+Log out
+
+`GET`
+
+`/api/auth/me`
+
+Get the current logged-in user
+
+### Tasks
+
+Task endpoints require authentication.
+
+Method
+
+Endpoint
+
+Description
+
+`GET`
+
+`/api/tasks`
+
+List current user's tasks
+
+`GET`
+
+`/api/tasks/{id}`
+
+Get one task
+
+`POST`
+
+`/api/tasks`
+
+Create a task
+
+`PUT`
+
+`/api/tasks/{id}`
+
+Replace a task
+
+`PATCH`
+
+`/api/tasks/{id}`
+
+Partially update a task
+
+`DELETE`
+
+`/api/tasks/{id}`
+
+Delete a task
+
+Task examples
+-------------
+
+### Create task
+
+    POST /api/tasks
+
+    {
+      "title": "Build TaskFlow"
+    }
+
+### Patch task
+
+    PATCH /api/tasks/{id}
+
+    {
+      "title": "Build TaskFlow API",
+      "status": "InProgress",
+      "priority": "High",
+      "markComplete": false
+    }
+
+Valid statuses:
+
+    Backlog
+    InProgress
+    Done
+
+Valid priorities:
+
+    Low
+    Medium
+    High
+
+Validation
+----------
+
+Request validation is handled with FluentValidation.
+
+Examples:
+
+*   Task title is required
+*   Task title has a max length
+*   Auth email must be valid
+*   Register password must meet minimum length
+
+Invalid requests return `400 Bad Request`.
+
+Notes
+-----
+
+### SQLite and DateTimeOffset
+
+SQLite does not support ordering by `DateTimeOffset` directly in EF Core queries.
+
+For now, tasks are loaded first and then sorted in memory:
+
+    var items = await UserTasks
+        .AsNoTracking()
+        .ToListAsync(ct);
+    
+    return Ok(items.OrderByDescending(t => t.CreatedAt));
+
+Future options:
+
+*   Store dates as UTC `DateTime`
+*   Store dates as Unix milliseconds
+*   Move to SQL Server or PostgreSQL for richer date/time support
+
+Roadmap
+-------
+
+*   \[x\] EF Core + SQLite persistence
+*   \[x\] ASP.NET Core Identity authentication
+*   \[x\] Per-user tasks
+*   \[x\] CRUD task endpoints
+*   \[x\] Enum JSON serialization
+*   \[x\] DTO contracts
+*   \[x\] FluentValidation
+*   \[x\] React frontend integration
+*   \[ \] Service layer
+*   \[ \] Filtering and search
+*   \[ \] Pagination
+*   \[ \] Due date improvements
