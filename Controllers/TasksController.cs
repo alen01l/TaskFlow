@@ -57,8 +57,6 @@ namespace TaskFlow.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<TaskItem>> Create([FromBody] CreateTaskDto dto, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(dto.Title))
-                return BadRequest("Title is required.");
 
             var userId = _users.GetUserId(User)!;
 
