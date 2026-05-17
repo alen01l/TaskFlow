@@ -52,23 +52,21 @@ namespace TaskFlow.Api.Controllers
         }
 
 
-
         public record CreateTaskDto(string Title);
-
-        public record UpdateTaskDto(
-            string? Title,
-            string? Priority,   // "Low" | "Medium" | "High" 
-            string? Status,     // "Backlog" | "InProgress" | "Done" 
-            DateTimeOffset? DueAtUtc,
-            bool? MarkComplete  // true = set CompletedAt now, false = clear CompletedAt
-        );
 
         public record ReplaceTaskDto(
             string Title,
-            string Priority,    // "Low" | "Medium" | "High"
-            string Status,      // "Backlog" | "InProgress" | "Done"
+            Priority Priority,
+            Status Status,
             DateTimeOffset? DueAtUtc,
             DateTimeOffset? CompletedAt
+        );
+        public record UpdateTaskDto(
+            string? Title,
+            Priority? Priority,
+            Status? Status,
+            DateTimeOffset? DueAtUtc,
+            bool? MarkComplete
         );
 
 
@@ -98,21 +96,16 @@ namespace TaskFlow.Api.Controllers
 
             if (item is null) return NotFound();
 
-            // Validate Priority
-            if (!Enum.TryParse<Priority>(dto.Priority, ignoreCase: true, out var prio))
-                return BadRequest("Priority must be Low, Medium, or High.");
-
-            // Validate Status
-            if (!Enum.TryParse<Status>(dto.Status, ignoreCase: true, out var status))
-                return BadRequest("Status must be Backlog, InProgress, or Done.");
+            item.Priority = dto.Priority;
+            item.Status = dto.Status;
 
             if (string.IsNullOrWhiteSpace(dto.Title))
                 return BadRequest("Title cannot be empty.");
 
             // Replace all fields
             item.Title = dto.Title.Trim();
-            item.Priority = prio;
-            item.Status = status;
+            item.Priority = dto.Priority;
+            item.Status = dto.Status;
             item.DueAtUtc = dto.DueAtUtc;
             item.CompletedAt = dto.CompletedAt;
 
@@ -138,18 +131,14 @@ namespace TaskFlow.Api.Controllers
                 item.Title = title;
             }
 
-            if (dto.Priority is not null)
+            if (dto.Priority.HasValue)
             {
-                if (!Enum.TryParse<Priority>(dto.Priority, ignoreCase: true, out var prio))
-                    return BadRequest("Priority must be Low, Medium, or High.");
-                item.Priority = prio;
+                item.Priority = dto.Priority.Value;
             }
 
-            if (dto.Status is not null)
+            if (dto.Status.HasValue)
             {
-                if (!Enum.TryParse<Status>(dto.Status, ignoreCase: true, out var st))
-                    return BadRequest("Status must be Backlog, InProgress, or Done.");
-                item.Status = st;
+                item.Status = dto.Status.Value;
             }
 
             if (dto.DueAtUtc.HasValue)
