@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,36 +14,36 @@ namespace TaskFlow.Api.Controllers
     {
         private readonly AppDbContext _dbContext;
         private readonly UserManager<AppUser> _users;
+
         public TasksController(AppDbContext dbContext, UserManager<AppUser> users)
         {
             _dbContext = dbContext;
             _users = users;
         }
 
+        private string UserId => _users.GetUserId(User)!;
+
+        private IQueryable<TaskItem> UserTasks =>
+            _dbContext.Tasks.Where(t => t.UserId == UserId);
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TaskItem>>> Get(CancellationToken ct)
         {
-            var userId = _users.GetUserId(User)!;
-
-            var items = await _dbContext.Tasks
+            var items = await UserTasks
                 .AsNoTracking()
-                .Where(t => t.UserId == userId)
                 .ToListAsync(ct);
 
-            return Ok(items.OrderByDescending(t => t.CreatedAt));
+            return Ok(items);
         }
 
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<TaskItem>> Get(Guid id, CancellationToken ct)
         {
-            var userId = _users.GetUserId(User)!;
-
-            var item = await _dbContext.Tasks
+            var item = await UserTasks
                 .AsNoTracking()
-                .Where(t => t.UserId == userId)
                 .FirstOrDefaultAsync(t => t.Id == id, ct);
-            if (item == null)
+
+            if (item is null)
             {
                 return NotFound();
             }
@@ -52,15 +51,15 @@ namespace TaskFlow.Api.Controllers
             return Ok(item);
         }
 
-
-
         [HttpPost]
         public async Task<ActionResult<TaskItem>> Create([FromBody] CreateTaskDto dto, CancellationToken ct)
         {
+            var item = new TaskItem
+            {
+                Title = dto.Title.Trim(),
+                UserId = UserId
+            };
 
-            var userId = _users.GetUserId(User)!;
-
-            var item = new TaskItem { Title = dto.Title.Trim(), UserId = userId };
             _dbContext.Tasks.Add(item);
             await _dbContext.SaveChangesAsync(ct);
 
@@ -70,20 +69,14 @@ namespace TaskFlow.Api.Controllers
         [HttpPut("{id:guid}")]
         public async Task<ActionResult<TaskItem>> Put(Guid id, [FromBody] ReplaceTaskDto dto, CancellationToken ct)
         {
-            var userId = _users.GetUserId(User)!;
+            var item = await UserTasks
+                .FirstOrDefaultAsync(t => t.Id == id, ct);
 
-            var item = await _dbContext.Tasks
-                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
+            if (item is null)
+            {
+                return NotFound();
+            }
 
-            if (item is null) return NotFound();
-
-            item.Priority = dto.Priority;
-            item.Status = dto.Status;
-
-            if (string.IsNullOrWhiteSpace(dto.Title))
-                return BadRequest("Title cannot be empty.");
-
-            // Replace all fields
             item.Title = dto.Title.Trim();
             item.Priority = dto.Priority;
             item.Status = dto.Status;
@@ -91,15 +84,16 @@ namespace TaskFlow.Api.Controllers
             item.CompletedAt = dto.CompletedAt;
 
             await _dbContext.SaveChangesAsync(ct);
+
             return Ok(item);
         }
 
         [HttpPatch("{id:guid}")]
         public async Task<ActionResult<TaskItem>> Patch(Guid id, [FromBody] UpdateTaskDto dto, CancellationToken ct)
         {
-            var userId = _users.GetUserId(User)!;
-            var item = await _dbContext.Tasks
-                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
+            var item = await UserTasks
+                .FirstOrDefaultAsync(t => t.Id == id, ct);
+
             if (item is null)
             {
                 return NotFound();
@@ -107,9 +101,7 @@ namespace TaskFlow.Api.Controllers
 
             if (dto.Title is not null)
             {
-                var title = dto.Title.Trim();
-                if (string.IsNullOrWhiteSpace(title)) return BadRequest("Title cannot be empty.");
-                item.Title = title;
+                item.Title = dto.Title.Trim();
             }
 
             if (dto.Priority.HasValue)
@@ -123,27 +115,36 @@ namespace TaskFlow.Api.Controllers
             }
 
             if (dto.DueAtUtc.HasValue)
+            {
                 item.DueAtUtc = dto.DueAtUtc;
+            }
 
             if (dto.MarkComplete.HasValue)
-                item.CompletedAt = dto.MarkComplete.Value ? DateTimeOffset.UtcNow : null;
+            {
+                item.CompletedAt = dto.MarkComplete.Value
+                    ? DateTimeOffset.UtcNow
+                    : null;
+            }
 
             await _dbContext.SaveChangesAsync(ct);
+
             return Ok(item);
         }
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
         {
-            var userId = _users.GetUserId(User)!;
+            var item = await UserTasks
+                .FirstOrDefaultAsync(t => t.Id == id, ct);
 
-            var item = await _dbContext.Tasks
-                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
-
-            if (item is null) return NotFound();
+            if (item is null)
+            {
+                return NotFound();
+            }
 
             _dbContext.Tasks.Remove(item);
             await _dbContext.SaveChangesAsync(ct);
+
             return NoContent();
         }
     }
