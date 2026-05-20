@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using TaskFlow.Api.Data;
+using TaskFlow.Api.Services.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +63,7 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddScoped<ITaskService, TaskService>();
 // Controllers + JSON enum strings
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
