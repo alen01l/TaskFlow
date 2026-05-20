@@ -5,7 +5,11 @@ namespace TaskFlow.Api.Services.Tasks;
 
 public interface ITaskService
 {
-    Task<IReadOnlyList<TaskResponseDto>> GetTasksAsync(string userId, CancellationToken ct);
+    Task<IReadOnlyList<TaskResponseDto>> GetTasksAsync(
+        GetTasksQuery query,
+        string userId,
+        CancellationToken ct
+    );
     Task<TaskResponseDto?> GetTaskAsync(Guid id, string userId, CancellationToken ct);
     Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto, string userId, CancellationToken ct);
     Task<TaskResponseDto?> ReplaceTaskAsync(Guid id, ReplaceTaskDto dto, string userId, CancellationToken ct);

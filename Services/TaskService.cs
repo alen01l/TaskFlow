@@ -16,11 +16,32 @@ public class TaskService : ITaskService
     private IQueryable<TaskItem> UserTasks(string userId) =>
         _dbContext.Tasks.Where(t => t.UserId == userId);
 
-    public async Task<IReadOnlyList<TaskResponseDto>> GetTasksAsync(string userId, CancellationToken ct)
+    public async Task<IReadOnlyList<TaskResponseDto>> GetTasksAsync(
+    GetTasksQuery query,
+    string userId,
+    CancellationToken ct
+)
     {
-        var items = await UserTasks(userId)
-            .AsNoTracking()
-            .ToListAsync(ct);
+        var tasks = UserTasks(userId).AsNoTracking();
+
+        if (query.Status.HasValue)
+        {
+            tasks = tasks.Where(t => t.Status == query.Status.Value);
+        }
+
+        if (query.Priority.HasValue)
+        {
+            tasks = tasks.Where(t => t.Priority == query.Priority.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim();
+
+            tasks = tasks.Where(t => t.Title.Contains(search));
+        }
+
+        var items = await tasks.ToListAsync(ct);
 
         return items
             .OrderByDescending(t => t.CreatedAt)

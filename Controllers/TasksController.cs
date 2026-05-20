@@ -24,9 +24,9 @@ namespace TaskFlow.Api.Controllers
         private string UserId => _users.GetUserId(User)!;
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TaskResponseDto>>> Get(CancellationToken ct)
+        public async Task<ActionResult<IEnumerable<TaskResponseDto>>> Get([FromQuery] GetTasksQuery query, CancellationToken ct)
         {
-            var items = await _tasks.GetTasksAsync(UserId, ct);
+            var items = await _tasks.GetTasksAsync(query, UserId, ct);
 
             return Ok(items);
         }
