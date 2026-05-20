@@ -24,7 +24,7 @@ namespace TaskFlow.Api.Controllers
         private string UserId => _users.GetUserId(User)!;
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TaskItem>>> Get(CancellationToken ct)
+        public async Task<ActionResult<IEnumerable<TaskResponseDto>>> Get(CancellationToken ct)
         {
             var items = await _tasks.GetTasksAsync(UserId, ct);
 
@@ -32,7 +32,7 @@ namespace TaskFlow.Api.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        public async Task<ActionResult<TaskItem>> Get(Guid id, CancellationToken ct)
+        public async Task<ActionResult<TaskResponseDto>> Get(Guid id, CancellationToken ct)
         {
             var item = await _tasks.GetTaskAsync(id, UserId, ct);
 
@@ -45,7 +45,7 @@ namespace TaskFlow.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TaskItem>> Create([FromBody] CreateTaskDto dto, CancellationToken ct)
+        public async Task<ActionResult<TaskResponseDto>> Create([FromBody] CreateTaskDto dto, CancellationToken ct)
         {
             var item = await _tasks.CreateTaskAsync(dto, UserId, ct);
 
@@ -53,7 +53,7 @@ namespace TaskFlow.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        public async Task<ActionResult<TaskItem>> Put(Guid id, [FromBody] ReplaceTaskDto dto, CancellationToken ct)
+        public async Task<ActionResult<TaskResponseDto>> Put(Guid id, [FromBody] ReplaceTaskDto dto, CancellationToken ct)
         {
             var item = await _tasks.ReplaceTaskAsync(id, dto, UserId, ct);
 
@@ -66,7 +66,7 @@ namespace TaskFlow.Api.Controllers
         }
 
         [HttpPatch("{id:guid}")]
-        public async Task<ActionResult<TaskItem>> Patch(Guid id, [FromBody] UpdateTaskDto dto, CancellationToken ct)
+        public async Task<ActionResult<TaskResponseDto>> Patch(Guid id, [FromBody] UpdateTaskDto dto, CancellationToken ct)
         {
             var item = await _tasks.UpdateTaskAsync(id, dto, UserId, ct);
 

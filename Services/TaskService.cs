@@ -16,7 +16,7 @@ public class TaskService : ITaskService
     private IQueryable<TaskItem> UserTasks(string userId) =>
         _dbContext.Tasks.Where(t => t.UserId == userId);
 
-    public async Task<IReadOnlyList<TaskItem>> GetTasksAsync(string userId, CancellationToken ct)
+    public async Task<IReadOnlyList<TaskResponseDto>> GetTasksAsync(string userId, CancellationToken ct)
     {
         var items = await UserTasks(userId)
             .AsNoTracking()
@@ -24,17 +24,22 @@ public class TaskService : ITaskService
 
         return items
             .OrderByDescending(t => t.CreatedAt)
+            .Select(TaskResponseDto.FromTask)
             .ToList();
     }
 
-    public async Task<TaskItem?> GetTaskAsync(Guid id, string userId, CancellationToken ct)
+    public async Task<TaskResponseDto?> GetTaskAsync(Guid id, string userId, CancellationToken ct)
     {
-        return await UserTasks(userId)
+        var item = await UserTasks(userId)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id, ct);
+
+        return item is null
+            ? null
+            : TaskResponseDto.FromTask(item);
     }
 
-    public async Task<TaskItem> CreateTaskAsync(CreateTaskDto dto, string userId, CancellationToken ct)
+    public async Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto, string userId, CancellationToken ct)
     {
         var item = new TaskItem
         {
@@ -45,10 +50,10 @@ public class TaskService : ITaskService
         _dbContext.Tasks.Add(item);
         await _dbContext.SaveChangesAsync(ct);
 
-        return item;
+        return TaskResponseDto.FromTask(item);
     }
 
-    public async Task<TaskItem?> ReplaceTaskAsync(Guid id, ReplaceTaskDto dto, string userId, CancellationToken ct)
+    public async Task<TaskResponseDto?> ReplaceTaskAsync(Guid id, ReplaceTaskDto dto, string userId, CancellationToken ct)
     {
         var item = await UserTasks(userId)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
@@ -66,10 +71,10 @@ public class TaskService : ITaskService
 
         await _dbContext.SaveChangesAsync(ct);
 
-        return item;
+        return TaskResponseDto.FromTask(item);
     }
 
-    public async Task<TaskItem?> UpdateTaskAsync(Guid id, UpdateTaskDto dto, string userId, CancellationToken ct)
+    public async Task<TaskResponseDto?> UpdateTaskAsync(Guid id, UpdateTaskDto dto, string userId, CancellationToken ct)
     {
         var item = await UserTasks(userId)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
@@ -108,7 +113,7 @@ public class TaskService : ITaskService
 
         await _dbContext.SaveChangesAsync(ct);
 
-        return item;
+        return TaskResponseDto.FromTask(item);
     }
 
     public async Task<bool> DeleteTaskAsync(Guid id, string userId, CancellationToken ct)
