@@ -38,7 +38,7 @@ public class TaskService : ITaskService
         {
             var search = query.Search.Trim();
 
-            tasks = tasks.Where(t => t.Title.Contains(search));
+            tasks = tasks.Where(t => t.Title.ToLower().Contains(search));
         }
 
         var items = await tasks.ToListAsync(ct);
