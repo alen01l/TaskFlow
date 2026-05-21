@@ -5,5 +5,6 @@ namespace TaskFlow.Api.Contracts.Tasks;
 public record GetTasksQuery(
     Status? Status,
     Priority? Priority,
-    string? Search
+    string? Search,
+    string? Sort
 );

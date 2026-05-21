@@ -36,15 +36,22 @@ public class TaskService : ITaskService
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
-            var search = query.Search.Trim();
+            var search = query.Search.Trim().ToLower();
 
             tasks = tasks.Where(t => t.Title.ToLower().Contains(search));
         }
 
         var items = await tasks.ToListAsync(ct);
 
-        return items
-            .OrderByDescending(t => t.CreatedAt)
+        var sorted = query.Sort?.ToLowerInvariant() switch
+        {
+            "oldest" => items.OrderBy(t => t.CreatedAt),
+            "priority" => items.OrderByDescending(t => t.Priority),
+            "status" => items.OrderBy(t => t.Status),
+            _ => items.OrderByDescending(t => t.CreatedAt),
+        };
+
+        return sorted
             .Select(TaskResponseDto.FromTask)
             .ToList();
     }
