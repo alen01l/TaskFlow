@@ -6,9 +6,10 @@
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string UserId { get; set; } = "";
-        public string Title { get; set; } = "";
+        public string Title { get; set; } = ""; 
         public Priority Priority { get; set; } = Priority.Medium;
         public Status Status { get; set; } = Status.Backlog;
+        public string? Description { get; set; }
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset? DueAtUtc { get; set; }
         public DateTimeOffset? CompletedAt { get; set; }

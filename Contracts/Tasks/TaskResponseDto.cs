@@ -5,6 +5,7 @@ namespace TaskFlow.Api.Contracts.Tasks;
 public record TaskResponseDto(
     Guid Id,
     string Title,
+    string? Description,
     Status Status,
     Priority Priority,
     DateTimeOffset CreatedAt,
@@ -17,6 +18,7 @@ public record TaskResponseDto(
         return new TaskResponseDto(
             task.Id,
             task.Title,
+            task.Description,
             task.Status,
             task.Priority,
             task.CreatedAt,

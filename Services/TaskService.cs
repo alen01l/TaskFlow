@@ -72,7 +72,8 @@ public class TaskService : ITaskService
         var item = new TaskItem
         {
             Title = dto.Title.Trim(),
-            UserId = userId
+            UserId = userId,
+            Description = dto.Description?.Trim()
         };
 
         _dbContext.Tasks.Add(item);
@@ -94,6 +95,7 @@ public class TaskService : ITaskService
         item.Title = dto.Title.Trim();
         item.Priority = dto.Priority;
         item.Status = dto.Status;
+        item.Description = dto.Description?.Trim();
         item.DueAtUtc = dto.DueAtUtc;
         item.CompletedAt = dto.CompletedAt;
 
@@ -125,6 +127,11 @@ public class TaskService : ITaskService
         if (dto.Status.HasValue)
         {
             item.Status = dto.Status.Value;
+        }
+
+        if (dto.Description is not null)
+        {
+            item.Description = dto.Description.Trim();
         }
 
         if (dto.DueAtUtc.HasValue)

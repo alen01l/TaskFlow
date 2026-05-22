@@ -10,5 +10,8 @@ public class CreateTaskDtoValidator : AbstractValidator<CreateTaskDto>
         RuleFor(x => x.Title)
             .NotEmpty()
             .MaximumLength(120);
+
+        RuleFor(x => x.Description)
+            .MaximumLength(1000);
     }
 }

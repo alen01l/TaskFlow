@@ -10,6 +10,9 @@ public class UpdateTaskDtoValidator : AbstractValidator<UpdateTaskDto>
         RuleFor(x => x.Title)
             .MaximumLength(120);
 
+        RuleFor(x => x.Description)
+            .MaximumLength(1000);
+
         When(x => x.Title is not null, () =>
         {
             RuleFor(x => x.Title)
